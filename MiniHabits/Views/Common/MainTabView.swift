@@ -136,63 +136,6 @@ struct MainTabView: View {
 
 // MARK: - 临时页面视图
 
-/// 统计页面视图占位符
-struct StatisticsView: View {
-    let habitStore: HabitStore
-
-    var body: some View {
-        VStack(spacing: DesignSystem.Spacing.xl) {
-            Spacer()
-
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: 60))
-                .foregroundColor(DesignSystem.Colors.primary)
-
-            VStack(spacing: DesignSystem.Spacing.sm) {
-                Text("统计分析")
-                    .font(DesignSystem.Typography.title1)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
-
-                Text("数据驱动的成长")
-                    .font(DesignSystem.Typography.callout)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-            }
-
-            CardView(
-                cornerRadius: DesignSystem.CornerRadius.large,
-                shadowRadius: 12,
-                shadowY: 4
-            ) {
-                VStack(spacing: DesignSystem.Spacing.md) {
-                    Text("本周统计")
-                        .font(DesignSystem.Typography.title3)
-                        .foregroundColor(DesignSystem.Colors.textPrimary)
-
-                    HStack(spacing: DesignSystem.Spacing.sm) {
-                        ForEach(habitStore.getWeeklyCompletionStats().indices, id: \.self) { index in
-                            VStack(spacing: DesignSystem.Spacing.xs) {
-                                Text("\(habitStore.getWeeklyCompletionStats()[index])")
-                                    .font(DesignSystem.Typography.footnote)
-                                    .foregroundColor(DesignSystem.Colors.primary)
-
-                                Text(DateFormatter.weekdayAbbreviation(for: index))
-                                    .font(DesignSystem.Typography.footnote)
-                                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer()
-        }
-        .padding(DesignSystem.Spacing.pageHorizontal)
-        .background(DesignSystem.Colors.background)
-        .navigationTitle("统计")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
-
 /// 设置页面视图占位符
 struct SettingsView: View {
     var body: some View {

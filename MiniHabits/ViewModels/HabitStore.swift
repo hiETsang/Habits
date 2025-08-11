@@ -61,6 +61,30 @@ extension HabitStore {
     func refresh() {
         loadHabits()
     }
+
+    /// 通过ID获取完整的Habit对象
+    /// - Parameter id: 习惯的UUID
+    /// - Returns: 完整的Habit对象，如果不存在则返回nil
+    func getHabit(by id: UUID) -> Habit? {
+        // 首先在内存中查找，更高效
+        if let habit = habits.first(where: { $0.id == id }) {
+            return habit
+        }
+
+        // 如果内存中没有，从数据库查找
+        do {
+            let descriptor = FetchDescriptor<Habit>(
+                predicate: #Predicate<Habit> { habit in
+                    habit.id == id && habit.isActive == true
+                }
+            )
+            let results = try modelContext.fetch(descriptor)
+            return results.first
+        } catch {
+            print("Failed to fetch habit by ID: \(error)")
+            return nil
+        }
+    }
 }
 
 // MARK: - 习惯管理
@@ -292,6 +316,69 @@ extension HabitStore {
         }
 
         return weekStats
+    }
+
+    /// 获取指定习惯在日期范围内的完成记录
+    /// - Parameters:
+    ///   - habit: 目标习惯
+    ///   - startDate: 开始日期
+    ///   - endDate: 结束日期
+    /// - Returns: 完成日期的集合
+    func getHabitCompletionDates(for habit: Habit, from startDate: Date, to endDate: Date) -> Set<Date> {
+        let calendar = Calendar.current
+
+        return Set(habit.records.compactMap { record in
+            guard record.isCompleted,
+                  record.completedAt >= startDate,
+                  record.completedAt <= endDate
+            else {
+                return nil
+            }
+            return calendar.startOfDay(for: record.completedAt)
+        })
+    }
+
+    /// 获取习惯的月度统计
+    /// - Parameters:
+    ///   - habit: 目标习惯
+    ///   - month: 目标月份
+    ///   - year: 目标年份
+    /// - Returns: 该月的完成次数
+    func getMonthlyStats(for habit: Habit, month: Int, year: Int) -> Int {
+        let calendar = Calendar.current
+
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = 1
+
+        guard let monthStart = calendar.date(from: components),
+              let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart)
+        else {
+            return 0
+        }
+
+        return habit.records.filter { record in
+            record.isCompleted &&
+                record.completedAt >= monthStart &&
+                record.completedAt < monthEnd
+        }.count
+    }
+
+    /// 获取所有习惯的总体统计
+    /// - Returns: 包含各种统计数据的字典
+    func getOverallStats() -> [String: Int] {
+        let totalHabits = habits.count
+        let completedToday = todayCompletedCount
+        let totalCompletedDays = habits.reduce(0) { $0 + $1.totalCompletedDays }
+        let totalActiveStreaks = habits.reduce(0) { $0 + $1.streakDays }
+
+        return [
+            "totalHabits": totalHabits,
+            "completedToday": completedToday,
+            "totalCompletedDays": totalCompletedDays,
+            "totalActiveStreaks": totalActiveStreaks,
+        ]
     }
 }
 

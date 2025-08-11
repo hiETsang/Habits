@@ -14,11 +14,10 @@ struct HomeView: View {
     var habitStore: HabitStore
     @State private var selectedDate = Date()
     @State private var selectedHabit: Habit?
+    @State private var focusHabit: Habit?
 
     @State private var showingAddHabit = false
     @State private var notificationBanner: NotificationBanner?
-    @State private var showingFocusTimer = false
-    @State private var showingEditHabit = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -39,20 +38,14 @@ struct HomeView: View {
         .refreshable {
             habitStore.refresh()
         }
-
         .sheet(isPresented: $showingAddHabit) {
             HabitFormView(habitStore: habitStore, editingHabit: nil)
         }
-        .sheet(isPresented: $showingEditHabit) {
-            if let habit = selectedHabit {
-                HabitFormView(habitStore: habitStore, editingHabit: habit)
-            }
+        .sheet(item: $selectedHabit) { habit in
+            HabitFormView(habitStore: habitStore, editingHabit: habit)
         }
-        .fullScreenCover(isPresented: $showingFocusTimer) {
-            if let habit = selectedHabit {
-                // TODO: 专注倒计时页面
-                focusTimerPlaceholder(for: habit)
-            }
+        .fullScreenCover(item: $focusHabit) { habit in
+            FocusTimerView(habit: habit, habitStore: habitStore)
         }
         .onAppear {
             setupInitialData()
@@ -135,22 +128,27 @@ struct HomeView: View {
             spacing: DesignSystem.Spacing.cardSpacing
         ) {
             // 习惯卡片
-            ForEach(displayHabits, id: \.id) { habit in
+            ForEach(displayHabits) { habit in
                 HabitCardView(
                     habit: habit,
                     isCompleted: habit.isCompleted(on: selectedDate),
                     onTap: {
-                        handleHabitTap(habit)
+                        handleHabitTap(habit.id)
                     },
                     onEdit: {
-                        selectedHabit = habit
-                        showingEditHabit = true
+                        if let fullHabit = habitStore.getHabit(by: habit.id) {
+                            selectedHabit = fullHabit
+                        }
                     },
                     onMarkComplete: {
-                        markHabitComplete(habit)
+                        if let fullHabit = habitStore.getHabit(by: habit.id) {
+                            markHabitComplete(fullHabit)
+                        }
                     },
                     onDelete: {
-                        deleteHabit(habit)
+                        if let fullHabit = habitStore.getHabit(by: habit.id) {
+                            deleteHabit(fullHabit)
+                        }
                     }
                 )
             }
@@ -163,36 +161,6 @@ struct HomeView: View {
             }
         }
         .padding(.horizontal, DesignSystem.Spacing.pageHorizontal)
-    }
-
-    /// 专注倒计时占位符
-    private func focusTimerPlaceholder(for habit: Habit) -> some View {
-        VStack(spacing: DesignSystem.Spacing.xl) {
-            Text("专注倒计时")
-                .font(DesignSystem.Typography.title1)
-
-            Text(habit.emoji)
-                .font(.system(size: 80))
-
-            Text(habit.title)
-                .font(DesignSystem.Typography.title2)
-
-            Text("只需要\(habit.microHabit)就可以了")
-                .font(DesignSystem.Typography.callout)
-                .foregroundColor(DesignSystem.Colors.textSecondary)
-
-            CustomButton.primary("开始专注") {
-                showingFocusTimer = false
-                markHabitComplete(habit)
-            }
-
-            CustomButton.tertiary("取消") {
-                showingFocusTimer = false
-            }
-        }
-        .padding(DesignSystem.Spacing.pageHorizontal)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DesignSystem.Colors.background)
     }
 }
 
@@ -260,9 +228,14 @@ extension HomeView {
 
 extension HomeView {
     /// 处理习惯卡片点击
-    private func handleHabitTap(_ habit: Habit) {
-        selectedHabit = habit
-        showingFocusTimer = true
+    private func handleHabitTap(_ habitId: UUID) {
+        // 通过ID重新获取完整的Habit对象，确保数据完整性
+        if let habit = habitStore.getHabit(by: habitId) {
+            print("Found habit: \(habit.title), emoji: \(habit.emoji)")
+            focusHabit = habit
+        } else {
+            print("Habit not found for ID: \(habitId)")
+        }
     }
 
     /// 标记习惯完成
