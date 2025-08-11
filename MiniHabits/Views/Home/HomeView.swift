@@ -14,10 +14,11 @@ struct HomeView: View {
     var habitStore: HabitStore
     @State private var selectedDate = Date()
     @State private var selectedHabit: Habit?
-    @State private var showingActionSheet = false
+
     @State private var showingAddHabit = false
     @State private var notificationBanner: NotificationBanner?
     @State private var showingFocusTimer = false
+    @State private var showingEditHabit = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -38,15 +39,14 @@ struct HomeView: View {
         .refreshable {
             habitStore.refresh()
         }
-        .sheet(isPresented: $showingActionSheet) {
-            if let habit = selectedHabit {
-                actionSheetContent(for: habit)
-            }
-        }
+
         .sheet(isPresented: $showingAddHabit) {
-            // TODO: 添加习惯页面
-            Text("添加习惯页面")
-                .presentationDetents([.medium, .large])
+            HabitFormView(habitStore: habitStore, editingHabit: nil)
+        }
+        .sheet(isPresented: $showingEditHabit) {
+            if let habit = selectedHabit {
+                HabitFormView(habitStore: habitStore, editingHabit: habit)
+            }
         }
         .fullScreenCover(isPresented: $showingFocusTimer) {
             if let habit = selectedHabit {
@@ -56,7 +56,6 @@ struct HomeView: View {
         }
         .onAppear {
             setupInitialData()
-            showWelcomeNotificationIfNeeded()
         }
     }
 
@@ -143,8 +142,15 @@ struct HomeView: View {
                     onTap: {
                         handleHabitTap(habit)
                     },
-                    onLongPress: {
-                        handleHabitLongPress(habit)
+                    onEdit: {
+                        selectedHabit = habit
+                        showingEditHabit = true
+                    },
+                    onMarkComplete: {
+                        markHabitComplete(habit)
+                    },
+                    onDelete: {
+                        deleteHabit(habit)
                     }
                 )
             }
@@ -157,30 +163,6 @@ struct HomeView: View {
             }
         }
         .padding(.horizontal, DesignSystem.Spacing.pageHorizontal)
-    }
-
-    /// 操作表内容
-    private func actionSheetContent(for habit: Habit) -> some View {
-        HabitActionSheet(
-            habit: habit,
-            onEdit: {
-                showingActionSheet = false
-                // TODO: 编辑习惯
-            },
-            onMarkComplete: {
-                showingActionSheet = false
-                markHabitComplete(habit)
-            },
-            onDelete: {
-                showingActionSheet = false
-                deleteHabit(habit)
-            },
-            onDismiss: {
-                showingActionSheet = false
-            }
-        )
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
     }
 
     /// 专注倒计时占位符
@@ -266,26 +248,6 @@ extension HomeView {
         }
     }
 
-    /// 显示欢迎通知
-    private func showWelcomeNotificationIfNeeded() {
-        // 模拟显示阅读提醒通知
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            withAnimation(DesignSystem.Animation.standard) {
-                notificationBanner = NotificationBanner.habitReminder(
-                    habitName: "阅读",
-                    habitEmoji: "📚",
-                    onTap: {
-                        // 点击通知时的操作
-                        dismissNotification()
-                    },
-                    onDismiss: {
-                        dismissNotification()
-                    }
-                )
-            }
-        }
-    }
-
     /// 关闭通知
     private func dismissNotification() {
         withAnimation(DesignSystem.Animation.standard) {
@@ -300,23 +262,7 @@ extension HomeView {
     /// 处理习惯卡片点击
     private func handleHabitTap(_ habit: Habit) {
         selectedHabit = habit
-
-        // 如果已完成，显示操作菜单；否则进入专注模式
-        if habit.isCompleted(on: selectedDate) {
-            showingActionSheet = true
-        } else {
-            showingFocusTimer = true
-        }
-    }
-
-    /// 处理习惯卡片长按
-    private func handleHabitLongPress(_ habit: Habit) {
-        selectedHabit = habit
-        showingActionSheet = true
-
-        // 触觉反馈
-        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-        impactFeedback.impactOccurred()
+        showingFocusTimer = true
     }
 
     /// 标记习惯完成

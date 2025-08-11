@@ -150,14 +150,6 @@ extension Habit {
                 themeColor: "#96CEB4",
                 sortOrder: 2
             ),
-            Habit(
-                title: "写作500字",
-                emoji: "✍️",
-                microHabit: "写20字",
-                focusDuration: 5,
-                themeColor: "#FFEAA7",
-                sortOrder: 3
-            ),
         ]
     }
 }

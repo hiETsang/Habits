@@ -13,32 +13,56 @@ struct HabitCardView: View {
     let habit: Habit
     let isCompleted: Bool
     let onTap: () -> Void
-    let onLongPress: () -> Void
+    let onEdit: () -> Void
+    let onMarkComplete: () -> Void
+    let onDelete: () -> Void
 
     @State private var isPressed = false
 
     var body: some View {
-        Button(action: onTap) {
-            cardContent
-                .background(cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large))
-                .shadow(
-                    color: shadowColor,
-                    radius: isPressed ? 2 : 8,
-                    x: 0,
-                    y: isPressed ? 1 : 4
-                )
-                .scaleEffect(isPressed ? 0.98 : 1.0)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .onLongPressGesture(minimumDuration: 0.1) {
-            onLongPress()
-        } onPressingChanged: { pressing in
-            withAnimation(DesignSystem.Animation.quick) {
-                isPressed = pressing
+        cardContent
+            .background(cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large))
+            .shadow(
+                color: shadowColor,
+                radius: isPressed ? 2 : 8,
+                x: 0,
+                y: isPressed ? 1 : 4
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
+            .onTapGesture {
+                onTap()
+            }
+            .contextMenu {
+                contextMenuContent
+            }
+            .aspectRatio(DesignSystem.Grid.cardAspectRatio, contentMode: .fit)
+    }
+
+    /// 上下文菜单内容
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        if !isCompleted {
+            Button {
+                onMarkComplete()
+            } label: {
+                Label("标记完成", systemImage: "checkmark.circle")
             }
         }
-        .aspectRatio(DesignSystem.Grid.cardAspectRatio, contentMode: .fit)
+
+        Button {
+            onEdit()
+        } label: {
+            Label("编辑习惯", systemImage: "pencil")
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            onDelete()
+        } label: {
+            Label("删除习惯", systemImage: "trash")
+        }
     }
 
     /// 卡片内容
@@ -305,7 +329,9 @@ struct HabitActionSheet: View {
                     habit: habit,
                     isCompleted: index == 0, // 第一个标记为已完成
                     onTap: { print("Tapped: \(habit.title)") },
-                    onLongPress: { print("Long pressed: \(habit.title)") }
+                    onEdit: { print("Edit: \(habit.title)") },
+                    onMarkComplete: { print("Mark complete: \(habit.title)") },
+                    onDelete: { print("Delete: \(habit.title)") }
                 )
             }
 
