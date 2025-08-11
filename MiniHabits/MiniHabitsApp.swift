@@ -5,14 +5,16 @@
 //  Created by 轻舟 on 2025/8/7.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct MiniHabitsApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
+            Habit.self,
+            HabitRecord.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
