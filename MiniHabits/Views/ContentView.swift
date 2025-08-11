@@ -13,6 +13,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         MainTabView()
+            .preferredColorScheme(.light) // 暂时固定为浅色模式，确保设计一致性
     }
 }
 
