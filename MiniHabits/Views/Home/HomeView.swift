@@ -18,6 +18,9 @@ struct HomeView: View {
 
     @State private var showingAddHabit = false
     @State private var notificationBanner: NotificationBanner?
+    @State private var userSettings: UserSettings?
+
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -49,6 +52,7 @@ struct HomeView: View {
         }
         .onAppear {
             setupInitialData()
+            loadUserSettings()
         }
     }
 
@@ -66,9 +70,6 @@ struct HomeView: View {
                 // 周视图导航
                 WeekNavigationView(selectedDate: $selectedDate)
 
-                // 习惯列表标题
-                habitSectionHeader
-
                 // 习惯卡片网格
                 habitGrid
 
@@ -82,15 +83,11 @@ struct HomeView: View {
     /// 顶部导航栏
     private var topNavigationBar: some View {
         HStack {
-            Text("MiniHabits")
+            Text(greetingText)
                 .font(DesignSystem.Typography.title1)
                 .foregroundColor(DesignSystem.Colors.textPrimary)
 
             Spacer()
-
-            Text(currentDateString)
-                .font(DesignSystem.Typography.callout)
-                .foregroundColor(DesignSystem.Colors.textSecondary)
         }
         .padding(.horizontal, DesignSystem.Spacing.pageHorizontal)
     }
@@ -98,24 +95,12 @@ struct HomeView: View {
     /// 习惯区域标题
     private var habitSectionHeader: some View {
         HStack {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                Text(sectionTitle)
-                    .font(DesignSystem.Typography.title2)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
-
-                if !todayHabits.isEmpty {
-                    Text(progressText)
-                        .font(DesignSystem.Typography.footnote)
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
-                }
-            }
-
             Spacer()
-
+            
             if !todayHabits.isEmpty {
-                Text("See all")
-                    .font(DesignSystem.Typography.footnote)
-                    .foregroundColor(DesignSystem.Colors.primary)
+                Text(progressText)
+                    .font(DesignSystem.Typography.title3)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
             }
         }
         .padding(.horizontal, DesignSystem.Spacing.pageHorizontal)
@@ -132,6 +117,7 @@ struct HomeView: View {
                 HabitCardView(
                     habit: habit,
                     isCompleted: habit.isCompleted(on: selectedDate),
+                    isInteractable: Calendar.current.isDateInToday(selectedDate),
                     onTap: {
                         handleHabitTap(habit.id)
                     },
@@ -167,10 +153,26 @@ struct HomeView: View {
 // MARK: - 数据处理
 
 extension HomeView {
-    /// 当前日期字符串
-    private var currentDateString: String {
+    /// 问候语文本
+    private var greetingText: String {
+        if let settings = userSettings {
+            return settings.personalizedGreeting
+        } else {
+            let hour = Calendar.current.component(.hour, from: Date())
+            let timeGreeting = switch hour {
+            case 6 ..< 12: "上午好"
+            case 12 ..< 14: "中午好"
+            case 14 ..< 18: "下午好"
+            default: "晚上好"
+            }
+            return "\(timeGreeting)，习惯达人"
+        }
+    }
+
+    /// 当前月份字符串
+    private var currentMonthString: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "M月 dd YYYY"
+        formatter.dateFormat = "M月"
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter.string(from: Date())
     }
@@ -189,12 +191,12 @@ extension HomeView {
     private var sectionTitle: String {
         let calendar = Calendar.current
         if calendar.isDateInToday(selectedDate) {
-            return "Tuesday habit"
+            return "Today's Habit"
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "EEEE"
             formatter.locale = Locale(identifier: "en_US")
-            return "\(formatter.string(from: selectedDate)) habit"
+            return "\(formatter.string(from: selectedDate))'s Habit"
         }
     }
 
@@ -216,6 +218,27 @@ extension HomeView {
         }
     }
 
+    /// 加载用户设置
+    private func loadUserSettings() {
+        do {
+            let descriptor = FetchDescriptor<UserSettings>()
+            let settings = try modelContext.fetch(descriptor)
+
+            if let existingSetting = settings.first {
+                userSettings = existingSetting
+            } else {
+                // 创建默认设置
+                let newSettings = UserSettings()
+                modelContext.insert(newSettings)
+                try modelContext.save()
+                userSettings = newSettings
+            }
+        } catch {
+            print("加载用户设置失败: \(error)")
+            // 使用默认值，不影响界面显示
+        }
+    }
+
     /// 关闭通知
     private func dismissNotification() {
         withAnimation(DesignSystem.Animation.standard) {
@@ -229,6 +252,13 @@ extension HomeView {
 extension HomeView {
     /// 处理习惯卡片点击
     private func handleHabitTap(_ habitId: UUID) {
+        // 只有今天的任务可以点击专注
+        let calendar = Calendar.current
+        guard calendar.isDateInToday(selectedDate) else {
+            showErrorNotification("只有今天的习惯可以开始专注")
+            return
+        }
+
         // 通过ID重新获取完整的Habit对象，确保数据完整性
         if let habit = habitStore.getHabit(by: habitId) {
             print("Found habit: \(habit.title), emoji: \(habit.emoji)")

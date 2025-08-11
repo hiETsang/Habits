@@ -12,6 +12,7 @@ import SwiftUI
 struct HabitCardView: View {
     let habit: Habit
     let isCompleted: Bool
+    let isInteractable: Bool
     let onTap: () -> Void
     let onEdit: () -> Void
     let onMarkComplete: () -> Void
@@ -30,11 +31,16 @@ struct HabitCardView: View {
                 y: isPressed ? 1 : 4
             )
             .scaleEffect(isPressed ? 0.98 : 1.0)
+            .opacity(isInteractable ? 1.0 : 0.6)
             .onTapGesture {
-                onTap()
+                if isInteractable {
+                    onTap()
+                }
             }
             .contextMenu {
-                contextMenuContent
+                if isInteractable {
+                    contextMenuContent
+                }
             }
             .aspectRatio(DesignSystem.Grid.cardAspectRatio, contentMode: .fit)
     }
@@ -234,6 +240,7 @@ struct AddHabitCardView: View {
                 HabitCardView(
                     habit: habit,
                     isCompleted: index == 0, // 第一个标记为已完成
+                    isInteractable: index != 1, // 第二个标记为不可交互
                     onTap: { print("Tapped: \(habit.title)") },
                     onEdit: { print("Edit: \(habit.title)") },
                     onMarkComplete: { print("Mark complete: \(habit.title)") },

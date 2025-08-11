@@ -51,9 +51,10 @@ struct WeekNavigationView: View {
 
             Spacer()
 
-            // 左右切换按钮
+            // 左右切换按钮和回到今日圆点
             HStack(spacing: DesignSystem.Spacing.sm) {
                 navigationButton(direction: .previous)
+                todayDotButton
                 navigationButton(direction: .next)
             }
         }
@@ -86,6 +87,20 @@ struct WeekNavigationView: View {
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter.string(from: selectedDate)
     }
+    
+    /// 当前周是否包含今天
+    private var isCurrentWeekContainsToday: Bool {
+        weekDates.contains { calendar.isDateInToday($0) }
+    }
+    
+    /// 回到今天
+    private func goToToday() {
+        withAnimation(DesignSystem.Animation.bouncy) {
+            let today = Date()
+            selectedDate = today
+            currentWeekStartDate = today.startOfWeek
+        }
+    }
 
     /// 导航方向
     enum NavigationDirection {
@@ -99,6 +114,19 @@ struct WeekNavigationView: View {
         }
     }
 
+    /// 回到今日圆点按钮
+    private var todayDotButton: some View {
+        Button {
+            goToToday()
+        } label: {
+            Circle()
+                .fill(isCurrentWeekContainsToday ? DesignSystem.Colors.primary : DesignSystem.Colors.textTertiary)
+                .frame(width: 8, height: 8)
+                .frame(width: 32, height: 32) // 保持与左右按钮相同的点击区域
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+    
     /// 导航按钮
     private func navigationButton(direction: NavigationDirection) -> some View {
         Button {

@@ -19,28 +19,28 @@ struct EmojiPickerView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // 搜索栏
-                searchSection
-
                 // 分类标签
                 categoryTabs
-
+                
                 // Emoji网格
                 emojiGrid
             }
-            .navigationTitle("选择图标")
+            .navigationTitle("选择表情")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    CustomButton.tertiary("取消", size: .small) {
+                    Button("取消") {
                         dismiss()
                     }
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    CustomButton.primary("完成", size: .small) {
+                    Button("完成") {
                         dismiss()
                     }
+                    .foregroundColor(DesignSystem.Colors.primary)
+                    .fontWeight(.semibold)
                     .disabled(selectedEmoji.isEmpty)
                 }
             }
@@ -48,24 +48,6 @@ struct EmojiPickerView: View {
         }
     }
 
-    /// 搜索区域
-    private var searchSection: some View {
-        HStack(spacing: DesignSystem.Spacing.md) {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(DesignSystem.Colors.textSecondary)
-                .font(.system(size: 16, weight: .medium))
-
-            TextField("搜索图标", text: $searchText)
-                .font(DesignSystem.Typography.body)
-                .textFieldStyle(PlainTextFieldStyle())
-        }
-        .padding(.horizontal, DesignSystem.Spacing.lg)
-        .padding(.vertical, DesignSystem.Spacing.md)
-        .background(DesignSystem.Colors.surfaceWhite)
-        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium))
-        .padding(.horizontal, DesignSystem.Spacing.pageHorizontal)
-        .padding(.vertical, DesignSystem.Spacing.md)
-    }
 
     /// 分类标签
     private var categoryTabs: some View {

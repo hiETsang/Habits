@@ -43,22 +43,11 @@ struct MainTabView: View {
             }
         }
 
-        var selectedIcon: String {
-            switch self {
-            case .home:
-                return "house.fill"
-            case .statistics:
-                return "chart.bar.fill"
-            case .settings:
-                return "gear.fill"
-            }
-        }
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
             // MARK: - 首页Tab
-
             NavigationStack {
                 if let habitStore = habitStore {
                     HomeView(habitStore: habitStore)
@@ -70,12 +59,11 @@ struct MainTabView: View {
                 }
             }
             .tabItem {
-                Label(Tab.home.title, systemImage: selectedTab == .home ? Tab.home.selectedIcon : Tab.home.icon)
+                Label(Tab.home.title, systemImage: Tab.home.icon)
             }
             .tag(Tab.home)
 
             // MARK: - 统计Tab
-
             NavigationStack {
                 if let habitStore = habitStore {
                     StatisticsView(habitStore: habitStore)
@@ -84,23 +72,26 @@ struct MainTabView: View {
                 }
             }
             .tabItem {
-                Label(Tab.statistics.title, systemImage: selectedTab == .statistics ? Tab.statistics.selectedIcon : Tab.statistics.icon)
+                Label(Tab.statistics.title, systemImage: Tab.statistics.icon)
             }
             .tag(Tab.statistics)
 
             // MARK: - 设置Tab
-
             NavigationStack {
-                SettingsView()
+                if let habitStore = habitStore {
+                    SettingsView(habitStore: habitStore)
+                } else {
+                    LoadingView()
+                }
             }
             .tabItem {
-                Label(Tab.settings.title, systemImage: selectedTab == .settings ? Tab.settings.selectedIcon : Tab.settings.icon)
+                Label(Tab.settings.title, systemImage: Tab.settings.icon)
             }
             .tag(Tab.settings)
         }
         .tint(DesignSystem.Colors.primary)
         .onAppear {
-            setupTabBarAppearance()
+            initializeHabitStore()
         }
     }
 
@@ -108,68 +99,10 @@ struct MainTabView: View {
     private func initializeHabitStore() {
         habitStore = HabitStore(modelContext: modelContext)
     }
-
-    /// 配置TabBar外观
-    private func setupTabBarAppearance() {
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.systemBackground
-
-        // 标准状态
-        appearance.stackedLayoutAppearance.normal.iconColor = UIColor(DesignSystem.Colors.tabUnselected)
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor(DesignSystem.Colors.tabUnselected),
-            .font: UIFont.systemFont(ofSize: 10, weight: .medium),
-        ]
-
-        // 选中状态
-        appearance.stackedLayoutAppearance.selected.iconColor = UIColor(DesignSystem.Colors.tabSelected)
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor(DesignSystem.Colors.tabSelected),
-            .font: UIFont.systemFont(ofSize: 10, weight: .semibold),
-        ]
-
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-    }
 }
 
 // MARK: - 临时页面视图
 
-/// 设置页面视图占位符
-struct SettingsView: View {
-    var body: some View {
-        VStack(spacing: DesignSystem.Spacing.xl) {
-            Spacer()
-
-            Image(systemName: "gear")
-                .font(.system(size: 60))
-                .foregroundColor(DesignSystem.Colors.primary)
-
-            VStack(spacing: DesignSystem.Spacing.sm) {
-                Text("设置")
-                    .font(DesignSystem.Typography.title1)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
-
-                Text("个性化您的体验")
-                    .font(DesignSystem.Typography.callout)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-            }
-
-            VStack(spacing: DesignSystem.Spacing.md) {
-                CustomButton.secondary("通知设置", icon: "bell") {}
-                CustomButton.secondary("主题设置", icon: "paintbrush") {}
-                CustomButton.secondary("关于应用", icon: "info.circle") {}
-            }
-
-            Spacer()
-        }
-        .padding(DesignSystem.Spacing.pageHorizontal)
-        .background(DesignSystem.Colors.background)
-        .navigationTitle("设置")
-        .navigationBarTitleDisplayMode(.large)
-    }
-}
 
 /// 加载视图
 struct LoadingView: View {

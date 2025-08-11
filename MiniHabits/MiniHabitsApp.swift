@@ -15,6 +15,7 @@ struct MiniHabitsApp: App {
             Item.self,
             Habit.self,
             HabitRecord.self,
+            UserSettings.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

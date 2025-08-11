@@ -393,7 +393,7 @@ extension HabitStore {
 
     /// 检查是否可以添加新习惯（最多4个）
     var canAddNewHabit: Bool {
-        return habits.count < 4
+        return true
     }
 
     /// 根据模板创建习惯

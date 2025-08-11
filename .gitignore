@@ -166,3 +166,6 @@ config.local.*
 settings.local.*
 
 .history/
+
+# YoYo AI version control directory
+.yoyo/
