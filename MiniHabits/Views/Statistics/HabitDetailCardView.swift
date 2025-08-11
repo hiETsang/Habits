@@ -237,8 +237,8 @@ private struct ContributionGridView: View {
 
     @State private var animatedCells: Set<String> = []
 
-    private let cellSize: CGFloat = 8
-    private let cellSpacing: CGFloat = 1
+    private let cellSize: CGFloat = 12
+    private let cellSpacing: CGFloat = 2
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
@@ -269,15 +269,17 @@ private struct ContributionGridView: View {
 
     /// 月份标签
     private var monthLabels: some View {
-        HStack {
+        HStack(spacing: 0) {
             Spacer()
                 .frame(width: 20) // 对齐星期标签
 
-            ForEach(monthLabelData, id: \.month) { data in
-                Text(data.month)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                    .frame(width: data.width, alignment: .leading)
+            HStack(spacing: 0) {
+                ForEach(monthLabelData, id: \.month) { data in
+                    Text(data.month)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(DesignSystem.Colors.textSecondary)
+                        .frame(width: data.width, alignment: .leading)
+                }
             }
 
             Spacer()
@@ -383,9 +385,9 @@ private struct ContributionGridView: View {
         var monthData: [(String, CGFloat)] = []
         var processedMonths: Set<String> = [] // 改用String来区分年月
 
-        let weekWidth = cellSize * 7 + cellSpacing * 6
+        let weekWidth = cellSize + cellSpacing
 
-        for (weekIndex, _) in (0 ..< weeksCount).enumerated() {
+        for weekIndex in 0 ..< weeksCount {
             guard let weekDate = calendar.date(byAdding: .weekOfYear, value: weekIndex, to: dateRange.first ?? Date()) else { continue }
 
             let year = calendar.component(.year, from: weekDate)
@@ -394,7 +396,23 @@ private struct ContributionGridView: View {
 
             if !processedMonths.contains(yearMonth) {
                 processedMonths.insert(yearMonth)
-                monthData.append((formatter.string(from: weekDate), weekWidth))
+                
+                // 计算这个月占用的周数
+                var monthWeekCount = 0
+                for checkWeekIndex in weekIndex ..< weeksCount {
+                    guard let checkWeekDate = calendar.date(byAdding: .weekOfYear, value: checkWeekIndex, to: dateRange.first ?? Date()) else { break }
+                    let checkMonth = calendar.component(.month, from: checkWeekDate)
+                    let checkYear = calendar.component(.year, from: checkWeekDate)
+                    
+                    if checkYear == year && checkMonth == month {
+                        monthWeekCount += 1
+                    } else {
+                        break
+                    }
+                }
+                
+                let monthWidth = CGFloat(monthWeekCount) * weekWidth - cellSpacing
+                monthData.append((formatter.string(from: weekDate), max(monthWidth, weekWidth)))
             }
         }
 
