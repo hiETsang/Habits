@@ -292,7 +292,8 @@ extension HabitStore {
     /// 获取本周完成统计
     /// - Returns: 本周每天的完成数量（周一到周日）
     func getWeeklyCompletionStats() -> [Int] {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 设置周一为每周第一天
         let today = Date()
 
         // 获取本周的开始日期（周一）

@@ -18,7 +18,7 @@ struct HabitDetailCardView: View {
     @State private var showingStats = false
     @State private var animateAppearance = false
 
-    private let weeksToShow = 6
+    private let weeksToShow = 18
     private let daysPerWeek = 7
 
     var body: some View {
@@ -114,7 +114,7 @@ extension HabitDetailCardView {
         VStack(spacing: DesignSystem.Spacing.sm) {
             // 贡献图标题
             HStack {
-                Text("最近6周")
+                Text("最近18周")
                     .font(DesignSystem.Typography.footnote)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
 
@@ -237,23 +237,27 @@ private struct ContributionGridView: View {
 
     @State private var animatedCells: Set<String> = []
 
-    private let cellSize: CGFloat = 12
-    private let cellSpacing: CGFloat = 2
+    private let cellSize: CGFloat = 8
+    private let cellSpacing: CGFloat = 1
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
             // 月份标签
-            monthLabels
+            ScrollView(.horizontal, showsIndicators: false) {
+                monthLabels
+            }
 
             // 贡献图网格
-            HStack(alignment: .top, spacing: cellSpacing) {
-                // 星期标签
-                weekdayLabels
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: cellSpacing) {
+                    // 星期标签
+                    weekdayLabels
 
-                // 日期网格
-                LazyHGrid(rows: weekdayRows, spacing: cellSpacing) {
-                    ForEach(dateRange, id: \.self) { date in
-                        contributionCell(for: date)
+                    // 日期网格
+                    LazyHGrid(rows: weekdayRows, spacing: cellSpacing) {
+                        ForEach(dateRange, id: \.self) { date in
+                            contributionCell(for: date)
+                        }
                     }
                 }
             }
@@ -283,13 +287,18 @@ private struct ContributionGridView: View {
     /// 星期标签
     private var weekdayLabels: some View {
         VStack(spacing: cellSpacing) {
-            ForEach(["", "一", "", "三", "", "五", ""], id: \.self) { day in
+            ForEach(["一", "", "三", "", "五", "", "日"], id: \.self) { day in
                 Text(day)
                     .font(.system(size: 9, weight: .medium))
                     .foregroundColor(DesignSystem.Colors.textSecondary)
                     .frame(width: 20, height: cellSize)
             }
         }
+    }
+
+    /// 星期列定义 - 每列代表一周的某一天
+    private var weekdayColumns: [GridItem] {
+        Array(repeating: GridItem(.fixed(cellSize), spacing: cellSpacing), count: weeksCount)
     }
 
     /// 星期行定义
@@ -314,10 +323,6 @@ private struct ContributionGridView: View {
             )
             .onTapGesture {
                 selectedDate = date
-
-                // 触觉反馈
-                let impact = UIImpactFeedbackGenerator(style: .light)
-                impact.impactOccurred()
             }
     }
 
@@ -342,13 +347,17 @@ private struct ContributionGridView: View {
 
     /// 日期范围
     private var dateRange: [Date] {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 设置周一为每周的第一天
         let today = Date()
 
-        // 计算6周前的周一
-        guard let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start,
-              let startDate = calendar.date(byAdding: .weekOfYear, value: -(weeksCount - 1), to: weekStart)
-        else {
+        // 先获取本周的开始日期（周一）
+        guard let thisWeekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start else {
+            return []
+        }
+
+        // 然后计算18周前的周一
+        guard let startDate = calendar.date(byAdding: .weekOfYear, value: -(weeksCount - 1), to: thisWeekStart) else {
             return []
         }
 
@@ -365,22 +374,26 @@ private struct ContributionGridView: View {
 
     /// 月份标签数据
     private var monthLabelData: [(month: String, width: CGFloat)] {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 设置周一为每周的第一天
         let formatter = DateFormatter()
         formatter.dateFormat = "M月"
         formatter.locale = Locale(identifier: "zh_CN")
 
         var monthData: [(String, CGFloat)] = []
-        var processedMonths: Set<Int> = []
+        var processedMonths: Set<String> = [] // 改用String来区分年月
 
         let weekWidth = cellSize * 7 + cellSpacing * 6
 
         for (weekIndex, _) in (0 ..< weeksCount).enumerated() {
             guard let weekDate = calendar.date(byAdding: .weekOfYear, value: weekIndex, to: dateRange.first ?? Date()) else { continue }
 
+            let year = calendar.component(.year, from: weekDate)
             let month = calendar.component(.month, from: weekDate)
-            if !processedMonths.contains(month) {
-                processedMonths.insert(month)
+            let yearMonth = "\(year)-\(month)"
+
+            if !processedMonths.contains(yearMonth) {
+                processedMonths.insert(yearMonth)
                 monthData.append((formatter.string(from: weekDate), weekWidth))
             }
         }

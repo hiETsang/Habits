@@ -212,7 +212,7 @@ extension DateFormatter {
     /// - Parameter index: 星期索引 (0=周一, 6=周日)
     /// - Returns: 星期几缩写
     static func weekdayAbbreviation(for index: Int) -> String {
-        let weekdays = ["一", "二", "三", "四", "五", "六", "日"]
+        let weekdays = ["一", "", "三", "", "五", "", "日"]
         return index < weekdays.count ? weekdays[index] : ""
     }
 }

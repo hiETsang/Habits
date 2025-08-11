@@ -129,14 +129,13 @@ struct WeeklyStatsChartView: View {
 
     /// 检查是否为今天
     private func isToday(_ index: Int) -> Bool {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 设置周一为每周第一天
         let today = Date()
-        guard calendar.dateInterval(of: .weekOfYear, for: today)?.start != nil else {
-            return false
-        }
-
+        
         let todayWeekday = calendar.component(.weekday, from: today)
-        let mondayBasedIndex = (todayWeekday == 1) ? 6 : todayWeekday - 2 // 转换为周一开始的索引
+        // 转换为周一开始的索引 (周一=0, 周二=1, ..., 周日=6)
+        let mondayBasedIndex = (todayWeekday == 1) ? 6 : todayWeekday - 2
 
         return index == mondayBasedIndex
     }

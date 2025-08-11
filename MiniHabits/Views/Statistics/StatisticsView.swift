@@ -171,7 +171,7 @@ extension StatisticsView {
 
                 Spacer()
 
-                Text("最近6周")
+                Text("最近18周")
                     .font(DesignSystem.Typography.footnote)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
             }
